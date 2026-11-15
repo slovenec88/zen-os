@@ -19,6 +19,13 @@ describe("BookOrbit home", function()
         assert.is_false(Home.open(plugin, { bookorbit = { browseCatalog = function() error("failed") end } }))
     end)
 
+    it("honors the Files request only once", function()
+        local fm = { bookorbit = { skip_return_home_once = true } }
+        assert.is_true(Home.consumeFilesRequest(fm))
+        assert.is_false(Home.consumeFilesRequest(fm))
+        assert.is_false(Home.consumeFilesRequest(nil))
+    end)
+
     it("does not open a second dashboard", function()
         ZenSpec.replace("common/utils", { closeWidgetsAbove = function() end })
         local returned = false

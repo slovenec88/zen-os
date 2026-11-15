@@ -5,6 +5,13 @@ function M.enabled(plugin)
     return type(navbar) == "table" and navbar.home_destination == "bookorbit"
 end
 
+function M.consumeFilesRequest(fm)
+    local bookorbit = fm and fm.bookorbit
+    if not bookorbit or bookorbit.skip_return_home_once ~= true then return false end
+    bookorbit.skip_return_home_once = nil
+    return true
+end
+
 function M.open(plugin, fm)
     if not M.enabled(plugin) then return false end
     local bookorbit = fm and fm.bookorbit

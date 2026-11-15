@@ -256,6 +256,11 @@ function M.init(logger, plugin)
         local Home = require("common/bookorbit_home")
         local original_home = FileManager.onHome
         function FileManager:onHome(...)
+            if not is_feature_enabled(plugin, "navbar") and Home.enabled(plugin)
+                    and Home.consumeFilesRequest(self) then
+                if original_home then return original_home(self, ...) end
+                return
+            end
             if not is_feature_enabled(plugin, "navbar") and Home.open(plugin, self) then
                 require("ui/uimanager"):setSuspendRepaints(false)
                 return true
