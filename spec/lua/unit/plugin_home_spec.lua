@@ -1,6 +1,6 @@
-local Home = require("common/bookorbit_home")
+local Home = require("common/plugin_home")
 
-describe("BookOrbit home", function()
+describe("plugin home", function()
     local plugin = { config = { navbar = { home_destination = "bookorbit" } } }
 
     it("opens the live file manager plugin with its cached dashboard", function()

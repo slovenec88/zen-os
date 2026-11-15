@@ -253,7 +253,7 @@ function M.init(logger, plugin)
 
     if not is_feature_enabled(plugin, "navbar") then
         local FileManager = require("apps/filemanager/filemanager")
-        local Home = require("common/bookorbit_home")
+        local Home = require("common/plugin_home")
         local original_home = FileManager.onHome
         function FileManager:onHome(...)
             if not is_feature_enabled(plugin, "navbar") and Home.isBookOrbit(plugin)
