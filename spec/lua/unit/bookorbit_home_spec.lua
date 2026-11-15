@@ -19,6 +19,24 @@ describe("BookOrbit home", function()
         assert.is_false(Home.open(plugin, { bookorbit = { browseCatalog = function() error("failed") end } }))
     end)
 
+    it("opens a selected plugin and falls back if it is unavailable", function()
+        local destination = { config = { navbar = {
+            home_destination = "plugin", home_plugin_key = "example", home_plugin_method = "open",
+        } } }
+        local opened = 0
+        ZenSpec.replace("modules/menu/app_launcher/plugin_scan", {
+            resolve = function(key, method)
+                assert.are.equal("example", key)
+                assert.are.equal("open", method)
+                return function() opened = opened + 1 end
+            end,
+        })
+        assert.is_true(Home.open(destination, {}))
+        assert.are.equal(1, opened)
+        ZenSpec.replace("modules/menu/app_launcher/plugin_scan", { resolve = function() end })
+        assert.is_false(Home.open(destination, {}))
+    end)
+
     it("honors the Files request only once", function()
         local fm = { bookorbit = { skip_return_home_once = true } }
         assert.is_true(Home.consumeFilesRequest(fm))

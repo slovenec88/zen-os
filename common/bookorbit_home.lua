@@ -2,6 +2,12 @@ local M = {}
 
 function M.enabled(plugin)
     local navbar = plugin and plugin.config and plugin.config.navbar
+    return type(navbar) == "table"
+        and (navbar.home_destination == "bookorbit" or navbar.home_destination == "plugin")
+end
+
+function M.isBookOrbit(plugin)
+    local navbar = plugin and plugin.config and plugin.config.navbar
     return type(navbar) == "table" and navbar.home_destination == "bookorbit"
 end
 
@@ -23,7 +29,7 @@ local function watchClose(plugin, fm, catalog)
             local reader = package.loaded["apps/reader/readerui"]
             local show_files = rawget(_G, "__ZEN_UI_NAVBAR_SHOW_FILES")
             local current = fm.bookorbit and fm.bookorbit.catalog_browser
-            if M.enabled(plugin) and type(show_files) == "function"
+            if M.isBookOrbit(plugin) and type(show_files) == "function"
                     and not (reader and reader.instance and reader.instance.document)
                     and (not current or (current == self and self.catalog_closed)) then
                 show_files()
@@ -35,6 +41,14 @@ end
 
 function M.open(plugin, fm)
     if not M.enabled(plugin) then return false end
+    if not M.isBookOrbit(plugin) then
+        local config = plugin.config.navbar
+        local launch = require("modules/menu/app_launcher/plugin_scan").resolve(
+            config.home_plugin_key, config.home_plugin_method)
+        if not launch then return false end
+        local ok, result = pcall(launch)
+        return ok and result ~= false
+    end
     local bookorbit = fm and fm.bookorbit
     if type(bookorbit) ~= "table" or type(bookorbit.browseCatalog) ~= "function" then
         return false

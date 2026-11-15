@@ -1500,12 +1500,15 @@ function M.build(ctx)
         text = _("Navbar"),
         _zen_search_items_func = arrange_search_items,
         sub_item_table = {
-            {
+            IconItem.decorate({
                 text = _("Home and library destination"),
                 sub_item_table = {
                     {
                         text = _("ZenOS"),
-                        checked_func = function() return config.navbar.home_destination ~= "bookorbit" end,
+                        checked_func = function()
+                            return config.navbar.home_destination ~= "bookorbit"
+                                and config.navbar.home_destination ~= "plugin"
+                        end,
                         callback = function()
                             config.navbar.home_destination = "zenos"
                             ctx.plugin:saveConfig()
@@ -1519,8 +1522,25 @@ function M.build(ctx)
                             ctx.plugin:saveConfig()
                         end,
                     },
+                    {
+                        text_func = function()
+                            return _("Other plugin") .. ": " .. (config.navbar.home_plugin_title or _("Choose"))
+                        end,
+                        checked_func = function() return config.navbar.home_destination == "plugin" end,
+                        callback = function(touch_menu)
+                            showPluginPicker(function(item)
+                                local selected = item.plugin
+                                if not selected then return end
+                                config.navbar.home_destination = "plugin"
+                                config.navbar.home_plugin_key = selected.key
+                                config.navbar.home_plugin_method = selected.method
+                                config.navbar.home_plugin_title = selected.title
+                                ctx.plugin:saveConfig()
+                            end, touch_menu)
+                        end,
+                    },
                 },
-            },
+            }, icons.settings_home),
             IconItem.decorate({
                 text = _("Tabs") .. " \u{25B8}",
                 keep_menu_open = true,

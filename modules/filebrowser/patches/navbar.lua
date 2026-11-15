@@ -1747,7 +1747,7 @@ local function apply_navbar()
     end
 
     local function open_default_tab()
-        if BookOrbitHome.enabled(zen_plugin) and BookOrbitHome.consumeFilesRequest(FileManager.instance) then
+        if BookOrbitHome.isBookOrbit(zen_plugin) and BookOrbitHome.consumeFilesRequest(FileManager.instance) then
             setActiveTab("books")
             onTabBooks(true)
             return "books"
@@ -2640,7 +2640,7 @@ local function apply_navbar()
     local orig_onHome = FileManager.onHome
 
     function FileManager:onHome()
-        if BookOrbitHome.enabled(zen_plugin) and BookOrbitHome.consumeFilesRequest(self) then
+        if BookOrbitHome.isBookOrbit(zen_plugin) and BookOrbitHome.consumeFilesRequest(self) then
             setActiveTab("books")
             onTabBooks(true)
             UIManager:setSuspendRepaints(false)
