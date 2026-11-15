@@ -99,6 +99,22 @@ describe("library navigation", function()
         assert.is_nil(_G.__ZEN_UI_FORCE_DEFAULT_LIBRARY_TAB)
     end)
 
+    it("returns to BookOrbit after closing the reader and clears transition state", function()
+        local ui = reader()
+        local opened = false
+        local bookorbit = { browseCatalog = function(_, cached)
+            assert.is_true(ui.closed)
+            assert.is_true(cached)
+            opened = true
+        end }
+        ZenSpec.replace("apps/filemanager/filemanager", { instance = { bookorbit = bookorbit } })
+        Navigation.showFromReader(ui, {
+            config = { navbar = { home_destination = "bookorbit" }, features = {} },
+        })
+        assert.is_true(opened)
+        assert.is_nil(_G.__ZEN_UI_FORCE_DEFAULT_LIBRARY_TAB)
+    end)
+
     it("forces the default from an outside book even when restore is enabled", function()
         Navigation.openDefault(reader("/outside/Book.epub"), {
             config = { features = { restore_library_view = true } },

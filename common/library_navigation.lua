@@ -62,11 +62,13 @@ function M.openDefault(ui, plugin, close_menu)
             })
         else
             local is_default_active = rawget(_G, "__ZEN_UI_NAVBAR_IS_DEFAULT_TAB_ACTIVE")
-            if type(is_default_active) == "function" and is_default_active() then
+            if not require("common/bookorbit_home").enabled(plugin)
+                    and type(is_default_active) == "function" and is_default_active() then
                 local resolve = rawget(_G, "__ZEN_UI_NAVBAR_RESOLVE_DEFAULT_TAB")
                 if type(resolve) ~= "function" or resolve() ~= "books" then return end
             end
             local fm = require("apps/filemanager/filemanager").instance
+            if require("common/bookorbit_home").open(plugin, fm) then return end
             if fm then require("common/utils").closeWidgetsAbove(fm) end
             local open_default = rawget(_G, "__ZEN_UI_NAVBAR_OPEN_DEFAULT_TAB")
             if type(open_default) == "function" then
@@ -154,6 +156,17 @@ function M.showFromReader(ui, plugin, opts)
     if can_show_file_manager then
         ui:showFileManager(file)
         hideRestoredItemUnderline(plugin)
+        if not target_folder and not target_tag and (not target_tab or target_tab == "books" or target_tab == "home") then
+            local fm = require("apps/filemanager/filemanager").instance
+            if require("common/bookorbit_home").open(plugin, fm) then
+                _G.__ZEN_UI_FORCE_DEFAULT_LIBRARY_TAB = nil
+                _G.__ZEN_UI_KEEP_BOOK_LOCATION = nil
+                _G.__ZEN_UI_OPEN_HOME_AFTER_FILEMANAGER = nil
+                _G.__ZEN_UI_OPEN_TARGET_TAB = nil
+                _G.__ZEN_UI_LIBRARY_STATE = nil
+                return true
+            end
+        end
         -- KOReader bypasses FileManager.showFiles when an instance survived teardown.
         if default_requested and rawget(_G, "__ZEN_UI_FORCE_DEFAULT_LIBRARY_TAB") == true then
             local open_default = rawget(_G, "__ZEN_UI_NAVBAR_OPEN_DEFAULT_TAB")

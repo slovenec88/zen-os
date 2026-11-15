@@ -251,6 +251,26 @@ function M.init(logger, plugin)
         end
     end
 
+    if not is_feature_enabled(plugin, "navbar") then
+        local FileManager = require("apps/filemanager/filemanager")
+        local Home = require("common/bookorbit_home")
+        local original_home = FileManager.onHome
+        function FileManager:onHome(...)
+            if not is_feature_enabled(plugin, "navbar") and Home.open(plugin, self) then
+                require("ui/uimanager"):setSuspendRepaints(false)
+                return true
+            end
+            if original_home then return original_home(self, ...) end
+        end
+        require("ui/uimanager"):scheduleIn(0, function()
+            local reader = package.loaded["apps/reader/readerui"]
+            if not is_feature_enabled(plugin, "navbar")
+                    and not (reader and reader.instance and reader.instance.document) then
+                Home.open(plugin, FileManager.instance)
+            end
+        end)
+    end
+
     local zen_renderer_fn = load_patch("zen_renderer")
     if zen_renderer_fn then
         run_feature(logger, plugin, "zen_renderer", zen_renderer_fn)

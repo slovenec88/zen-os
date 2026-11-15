@@ -1500,6 +1500,27 @@ function M.build(ctx)
         text = _("Navbar"),
         _zen_search_items_func = arrange_search_items,
         sub_item_table = {
+            {
+                text = _("Home and library destination"),
+                sub_item_table = {
+                    {
+                        text = _("ZenOS"),
+                        checked_func = function() return config.navbar.home_destination ~= "bookorbit" end,
+                        callback = function()
+                            config.navbar.home_destination = "zenos"
+                            ctx.plugin:saveConfig()
+                        end,
+                    },
+                    {
+                        text = _("BookOrbit"),
+                        checked_func = function() return config.navbar.home_destination == "bookorbit" end,
+                        callback = function()
+                            config.navbar.home_destination = "bookorbit"
+                            ctx.plugin:saveConfig()
+                        end,
+                    },
+                },
+            },
             IconItem.decorate({
                 text = _("Tabs") .. " \u{25B8}",
                 keep_menu_open = true,

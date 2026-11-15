@@ -32,6 +32,7 @@ local function apply_navbar()
     local StandalonePage = require("modules/filebrowser/patches/standalone_page")
     local NativeMenu = require("modules/menu/app_launcher/native_menu")
     local PluginScan = require("modules/menu/app_launcher/plugin_scan")
+    local BookOrbitHome = require("common/bookorbit_home")
     local Screen = Device.screen
     local _ = require("gettext")
     local lfs = require("libs/libkoreader-lfs")
@@ -1091,6 +1092,7 @@ local function apply_navbar()
 
     local function onTabBooks()
         local fm = FileManager.instance
+        if BookOrbitHome.open(zen_plugin, fm) then return end
         local home_dir = paths.getHomeDir()
                          or require("apps/filemanager/filemanagerutil").getDefaultDir()
         if not (fm and fm.file_chooser) then return false end
@@ -1487,6 +1489,7 @@ local function apply_navbar()
     end
 
     local function onTabHome()
+        if BookOrbitHome.open(zen_plugin, FileManager.instance) then return end
         if resetHomeStripPages() then return end
         local Home = get_shared("home")
         if not Home then return end
@@ -1744,6 +1747,7 @@ local function apply_navbar()
     end
 
     local function open_default_tab()
+        if BookOrbitHome.open(zen_plugin, FileManager.instance) then return "bookorbit" end
         local tab_id = resolve_default_tab()
         if shouldTrackActiveTab(tab_id) then
             setActiveTab(tab_id)
@@ -2631,6 +2635,10 @@ local function apply_navbar()
     local orig_onHome = FileManager.onHome
 
     function FileManager:onHome()
+        if BookOrbitHome.open(zen_plugin, self) then
+            UIManager:setSuspendRepaints(false)
+            return true
+        end
         if is_navbar_enabled() then
             utils.closeWidgetsAbove(self)
             open_default_tab()
@@ -3718,7 +3726,7 @@ local function apply_navbar()
                 or FileManager.instance ~= fm then
             return false
         end
-        if resolve_default_tab() == "books" and active_tab == "books" then
+        if not BookOrbitHome.enabled(zen_plugin) and resolve_default_tab() == "books" and active_tab == "books" then
             fm._zen_default_tab_bootstrapped = true
             return false
         end
