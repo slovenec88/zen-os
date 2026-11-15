@@ -12,6 +12,27 @@ function M.consumeFilesRequest(fm)
     return true
 end
 
+local function watchClose(plugin, fm, catalog)
+    if type(catalog) ~= "table" or catalog._zen_home_close_wrapped
+            or type(catalog.onCloseAllMenus) ~= "function" then return end
+    local close = catalog.onCloseAllMenus
+    catalog._zen_home_close_wrapped = true
+    function catalog:onCloseAllMenus(...)
+        local result = close(self, ...)
+        require("ui/uimanager"):nextTick(function()
+            local reader = package.loaded["apps/reader/readerui"]
+            local show_files = rawget(_G, "__ZEN_UI_NAVBAR_SHOW_FILES")
+            local current = fm.bookorbit and fm.bookorbit.catalog_browser
+            if M.enabled(plugin) and type(show_files) == "function"
+                    and not (reader and reader.instance and reader.instance.document)
+                    and (not current or (current == self and self.catalog_closed)) then
+                show_files()
+            end
+        end)
+        return result
+    end
+end
+
 function M.open(plugin, fm)
     if not M.enabled(plugin) then return false end
     local bookorbit = fm and fm.bookorbit
@@ -26,6 +47,7 @@ function M.open(plugin, fm)
         local stack = require("ui/uimanager")._window_stack or {}
         for _, window in ipairs(stack) do
             if window.widget == catalog then
+                watchClose(plugin, fm, catalog)
                 require("common/utils").closeWidgetsAbove(catalog)
                 if type(catalog.goDashboard) == "function" then catalog:goDashboard() end
                 return true
@@ -34,6 +56,7 @@ function M.open(plugin, fm)
         bookorbit.catalog_browser = nil
     end
     local ok = pcall(bookorbit.browseCatalog, bookorbit, true)
+    if ok then watchClose(plugin, fm, bookorbit.catalog_browser) end
     return ok
 end
 

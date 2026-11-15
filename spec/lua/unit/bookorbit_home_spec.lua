@@ -36,4 +36,18 @@ describe("BookOrbit home", function()
         } }))
         assert.is_true(returned)
     end)
+
+    it("shows files after the BookOrbit catalog closes", function()
+        local queue, files = {}, 0
+        local catalog = { onCloseAllMenus = function(self) self.catalog_closed = true end }
+        local fm = { bookorbit = { browseCatalog = function(self) self.catalog_browser = catalog end } }
+        ZenSpec.replace("ui/uimanager", { nextTick = function(_, fn) queue[#queue + 1] = fn end })
+        _G.__ZEN_UI_NAVBAR_SHOW_FILES = function() files = files + 1 end
+        assert.is_true(Home.open(plugin, fm))
+        catalog:onCloseAllMenus()
+        assert.are.equal(0, files)
+        queue[1]()
+        assert.are.equal(1, files)
+        _G.__ZEN_UI_NAVBAR_SHOW_FILES = nil
+    end)
 end)

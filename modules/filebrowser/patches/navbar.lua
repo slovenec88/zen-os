@@ -4223,6 +4223,11 @@ local function apply_navbar()
         end
     end
 
+    _G.__ZEN_UI_NAVBAR_SHOW_FILES = function()
+        setActiveTab("books")
+        onTabBooks(true)
+    end
+
     reinject_initial_filemanager()
     UIManager:nextTick(reinject_initial_filemanager)
 
