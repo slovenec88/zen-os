@@ -24,7 +24,7 @@ Use **Add** for more:
 
 **Default tab** sets where ZenOS opens at startup and what the physical Home button does.
 
-Choose **Home and library destination** to open BookOrbit or another detected plugin from ZenOS Home and Library. Install and enable the plugin first. ZenOS uses its own library if the selected plugin is unavailable. Other plugins may open their menu instead of a home screen.
+Choose **Home and library destination** to open a plugin menu or run an action from ZenOS Home and Library. Install and enable the plugin first. Some plugins provide an action that opens their home screen. ZenOS uses its own library if the selected plugin is unavailable.
 
 **Where:** Zen Settings > Interface > Navbar > Tabs
 

@@ -99,17 +99,18 @@ describe("library navigation", function()
         assert.is_nil(_G.__ZEN_UI_FORCE_DEFAULT_LIBRARY_TAB)
     end)
 
-    it("returns to BookOrbit after closing the reader and clears transition state", function()
+    it("returns to the selected plugin after closing the reader and clears transition state", function()
         local ui = reader()
         local opened = false
-        local bookorbit = { browseCatalog = function(_, cached)
-            assert.is_true(ui.closed)
-            assert.is_true(cached)
-            opened = true
-        end }
-        ZenSpec.replace("apps/filemanager/filemanager", { instance = { bookorbit = bookorbit } })
+        ZenSpec.replace("modules/menu/app_launcher/plugin_scan", { resolve = function()
+            return function()
+                assert.is_true(ui.closed)
+                opened = true
+            end
+        end })
+        ZenSpec.replace("apps/filemanager/filemanager", { instance = {} })
         Navigation.showFromReader(ui, {
-            config = { navbar = { home_destination = "bookorbit" }, features = {} },
+            config = { navbar = { home_destination = "plugin" }, features = {} },
         })
         assert.is_true(opened)
         assert.is_nil(_G.__ZEN_UI_FORCE_DEFAULT_LIBRARY_TAB)

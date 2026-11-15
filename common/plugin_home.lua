@@ -1,77 +1,31 @@
 local M = {}
+local opening = false
 
 function M.enabled(plugin)
     local navbar = plugin and plugin.config and plugin.config.navbar
     return type(navbar) == "table"
-        and (navbar.home_destination == "bookorbit" or navbar.home_destination == "plugin")
+        and (navbar.home_destination == "plugin" or navbar.home_destination == "action")
 end
 
-function M.isBookOrbit(plugin)
-    local navbar = plugin and plugin.config and plugin.config.navbar
-    return type(navbar) == "table" and navbar.home_destination == "bookorbit"
-end
-
-function M.consumeFilesRequest(fm)
-    local bookorbit = fm and fm.bookorbit
-    if not bookorbit or bookorbit.skip_return_home_once ~= true then return false end
-    bookorbit.skip_return_home_once = nil
-    return true
-end
-
-local function watchClose(plugin, fm, catalog)
-    if type(catalog) ~= "table" or catalog._zen_home_close_wrapped
-            or type(catalog.onCloseAllMenus) ~= "function" then return end
-    local close = catalog.onCloseAllMenus
-    catalog._zen_home_close_wrapped = true
-    function catalog:onCloseAllMenus(...)
-        local result = close(self, ...)
-        require("ui/uimanager"):nextTick(function()
-            local reader = package.loaded["apps/reader/readerui"]
-            local show_files = rawget(_G, "__ZEN_UI_NAVBAR_SHOW_FILES")
-            local current = fm.bookorbit and fm.bookorbit.catalog_browser
-            if M.isBookOrbit(plugin) and type(show_files) == "function"
-                    and not (reader and reader.instance and reader.instance.document)
-                    and (not current or (current == self and self.catalog_closed)) then
-                show_files()
-            end
-        end)
-        return result
+function M.open(plugin)
+    if opening or not M.enabled(plugin) then return false end
+    local config = plugin.config.navbar
+    if config.home_destination == "action" then
+        if type(config.home_action) ~= "table" or not next(config.home_action) then return false end
+        local ok, dispatcher = pcall(require, "dispatcher")
+        if not ok or not dispatcher then return false end
+        opening = true
+        local success, result = pcall(dispatcher.execute, dispatcher, config.home_action)
+        opening = false
+        return success and result ~= false
     end
-end
-
-function M.open(plugin, fm)
-    if not M.enabled(plugin) then return false end
-    if not M.isBookOrbit(plugin) then
-        local config = plugin.config.navbar
-        local launch = require("modules/menu/app_launcher/plugin_scan").resolve(
-            config.home_plugin_key, config.home_plugin_method)
-        if not launch then return false end
-        local ok, result = pcall(launch)
-        return ok and result ~= false
-    end
-    local bookorbit = fm and fm.bookorbit
-    if type(bookorbit) ~= "table" or type(bookorbit.browseCatalog) ~= "function" then
-        return false
-    end
-    if bookorbit.catalog_browser and bookorbit.catalog_browser.catalog_closed then
-        bookorbit.catalog_browser = nil
-    end
-    if bookorbit.catalog_browser then
-        local catalog = bookorbit.catalog_browser
-        local stack = require("ui/uimanager")._window_stack or {}
-        for _, window in ipairs(stack) do
-            if window.widget == catalog then
-                watchClose(plugin, fm, catalog)
-                require("common/utils").closeWidgetsAbove(catalog)
-                if type(catalog.goDashboard) == "function" then catalog:goDashboard() end
-                return true
-            end
-        end
-        bookorbit.catalog_browser = nil
-    end
-    local ok = pcall(bookorbit.browseCatalog, bookorbit, true)
-    if ok then watchClose(plugin, fm, bookorbit.catalog_browser) end
-    return ok
+    local launch = require("modules/menu/app_launcher/plugin_scan").resolve(
+        config.home_plugin_key, config.home_plugin_method)
+    if not launch then return false end
+    opening = true
+    local ok, result = pcall(launch)
+    opening = false
+    return ok and result ~= false
 end
 
 return M

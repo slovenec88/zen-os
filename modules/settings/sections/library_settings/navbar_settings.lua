@@ -1496,6 +1496,19 @@ function M.build(ctx)
     -- Navbar item
     -- -------------------------------------------------------------------------
 
+    local home_action_items = {}
+    if ok_disp then
+        local caller = {}
+        DispatcherMenu.addSubMenu(Dispatcher, caller, home_action_items, config.navbar, "home_action")
+        wrap_dispatch_callbacks(home_action_items, caller, function(touch_menu)
+            if config.navbar.home_action and next(config.navbar.home_action) then
+                config.navbar.home_destination = "action"
+            end
+            ctx.plugin:saveConfig()
+            if touch_menu then touch_menu:updateItems() end
+        end)
+    end
+
     return IconItem.decorate({
         text = _("Navbar"),
         _zen_search_items_func = arrange_search_items,
@@ -1506,8 +1519,8 @@ function M.build(ctx)
                     {
                         text = _("ZenOS"),
                         checked_func = function()
-                            return config.navbar.home_destination ~= "bookorbit"
-                                and config.navbar.home_destination ~= "plugin"
+                            return config.navbar.home_destination ~= "plugin"
+                                and config.navbar.home_destination ~= "action"
                         end,
                         callback = function()
                             config.navbar.home_destination = "zenos"
@@ -1515,16 +1528,8 @@ function M.build(ctx)
                         end,
                     },
                     {
-                        text = _("BookOrbit"),
-                        checked_func = function() return config.navbar.home_destination == "bookorbit" end,
-                        callback = function()
-                            config.navbar.home_destination = "bookorbit"
-                            ctx.plugin:saveConfig()
-                        end,
-                    },
-                    {
                         text_func = function()
-                            return _("Other plugin") .. ": " .. (config.navbar.home_plugin_title or _("Choose"))
+                            return _("Plugin menu") .. ": " .. (config.navbar.home_plugin_title or _("Choose"))
                         end,
                         checked_func = function() return config.navbar.home_destination == "plugin" end,
                         callback = function(touch_menu)
@@ -1538,6 +1543,16 @@ function M.build(ctx)
                                 ctx.plugin:saveConfig()
                             end, touch_menu)
                         end,
+                    },
+                    {
+                        text_func = function()
+                            local label = config.navbar.home_action and ok_disp
+                                and Dispatcher:menuTextFunc(config.navbar.home_action) or _("Choose")
+                            return _("Plugin action") .. ": " .. label
+                        end,
+                        checked_func = function() return config.navbar.home_destination == "action" end,
+                        enabled_func = function() return ok_disp end,
+                        sub_item_table = home_action_items,
                     },
                 },
             }, icons.settings_home),

@@ -1090,9 +1090,9 @@ local function apply_navbar()
         return revealed
     end
 
-    local function onTabBooks(show_files)
+    local function onTabBooks()
         local fm = FileManager.instance
-        if not show_files and PluginHome.open(zen_plugin, fm) then return end
+        if PluginHome.open(zen_plugin, fm) then return end
         local home_dir = paths.getHomeDir()
                          or require("apps/filemanager/filemanagerutil").getDefaultDir()
         if not (fm and fm.file_chooser) then return false end
@@ -1747,11 +1747,6 @@ local function apply_navbar()
     end
 
     local function open_default_tab()
-        if PluginHome.isBookOrbit(zen_plugin) and PluginHome.consumeFilesRequest(FileManager.instance) then
-            setActiveTab("books")
-            onTabBooks(true)
-            return "books"
-        end
         if PluginHome.open(zen_plugin, FileManager.instance) then return "plugin" end
         local tab_id = resolve_default_tab()
         if shouldTrackActiveTab(tab_id) then
@@ -2640,12 +2635,6 @@ local function apply_navbar()
     local orig_onHome = FileManager.onHome
 
     function FileManager:onHome()
-        if PluginHome.isBookOrbit(zen_plugin) and PluginHome.consumeFilesRequest(self) then
-            setActiveTab("books")
-            onTabBooks(true)
-            UIManager:setSuspendRepaints(false)
-            return true
-        end
         if PluginHome.open(zen_plugin, self) then
             UIManager:setSuspendRepaints(false)
             return true
@@ -4221,11 +4210,6 @@ local function apply_navbar()
             if maybe_open_startup_default_tab(fm) then return end
             UIManager:setDirty(fm, "ui")
         end
-    end
-
-    _G.__ZEN_UI_NAVBAR_SHOW_FILES = function()
-        setActiveTab("books")
-        onTabBooks(true)
     end
 
     reinject_initial_filemanager()
