@@ -154,11 +154,13 @@ function M.showFromReader(ui, plugin, opts)
     end
     if opts.after_close then opts.after_close() end
     if can_show_file_manager then
+        local plugin_home = require("common/plugin_home")
+        local open_count = plugin_home.openCount()
         ui:showFileManager(file)
         hideRestoredItemUnderline(plugin)
         if not target_folder and not target_tag and (not target_tab or target_tab == "books" or target_tab == "home") then
             local fm = require("apps/filemanager/filemanager").instance
-            if require("common/plugin_home").open(plugin, fm) then
+            if plugin_home.openCount() ~= open_count or plugin_home.open(plugin, fm) then
                 _G.__ZEN_UI_FORCE_DEFAULT_LIBRARY_TAB = nil
                 _G.__ZEN_UI_KEEP_BOOK_LOCATION = nil
                 _G.__ZEN_UI_OPEN_HOME_AFTER_FILEMANAGER = nil

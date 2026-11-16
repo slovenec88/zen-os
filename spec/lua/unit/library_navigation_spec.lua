@@ -116,6 +116,23 @@ describe("library navigation", function()
         assert.is_nil(_G.__ZEN_UI_FORCE_DEFAULT_LIBRARY_TAB)
     end)
 
+    it("does not reopen the plugin when the file manager already opened it", function()
+        local ui = reader()
+        local opens = 0
+        ZenSpec.replace("dispatcher", { registerAction = function() end })
+        ZenSpec.replace("modules/menu/app_launcher/plugin_scan", { resolve = function()
+            return function() opens = opens + 1 end
+        end })
+        local plugin = { config = { navbar = { home_destination = "plugin" }, features = {} } }
+        ZenSpec.replace("apps/filemanager/filemanager", { instance = {} })
+        function ui:showFileManager()
+            require("common/plugin_home").open(plugin)
+        end
+        Navigation.showFromReader(ui, plugin)
+        assert.are.equal(1, opens)
+        assert.is_nil(_G.__ZEN_UI_FORCE_DEFAULT_LIBRARY_TAB)
+    end)
+
     it("forces the default from an outside book even when restore is enabled", function()
         Navigation.openDefault(reader("/outside/Book.epub"), {
             config = { features = { restore_library_view = true } },
