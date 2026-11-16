@@ -1785,6 +1785,31 @@ local function apply_navbar()
 
     local ok_disp_ct, Dispatcher_ct = pcall(require, "dispatcher")
 
+    local function executeCustomAction(action)
+        local fm = FileManager.instance
+        local send_event = UIManager.sendEvent
+        local forwarding = false
+        local stack = UIManager._window_stack
+        local top = stack and stack[#stack] and stack[#stack].widget
+        if top and top.name == "home" and fm and type(fm.handleEvent) == "function"
+                and type(send_event) == "function" then
+            -- The file manager can be hidden below a standalone library view.
+            UIManager.sendEvent = function(manager, event, ...)
+                if not forwarding then
+                    forwarding = true
+                    local ok, handled = pcall(fm.handleEvent, fm, event)
+                    forwarding = false
+                    if not ok then error(handled, 0) end
+                    if handled then return handled end
+                end
+                return send_event(manager, event, ...)
+            end
+        end
+        local ok, err = pcall(Dispatcher_ct.execute, Dispatcher_ct, action)
+        UIManager.sendEvent = send_event
+        if not ok then error(err, 0) end
+    end
+
     -- === Colored icon widget ===
     -- Build a mask from the icon, then color-blit through it.
 
@@ -2191,13 +2216,13 @@ local function apply_navbar()
                             end
                         elseif ok_disp_ct and ct.action and next(ct.action) then
                             local action = ct.action
-                            tab_callbacks[ct.id] = function() Dispatcher_ct:execute(action) end
+                            tab_callbacks[ct.id] = function() executeCustomAction(action) end
                         else
                             tab_callbacks[ct.id] = function() end
                         end
                     elseif ok_disp_ct and ct.action and next(ct.action) then
                         local action = ct.action
-                        tab_callbacks[ct.id] = function() Dispatcher_ct:execute(action) end
+                        tab_callbacks[ct.id] = function() executeCustomAction(action) end
                     else
                         tab_callbacks[ct.id] = function() end
                     end

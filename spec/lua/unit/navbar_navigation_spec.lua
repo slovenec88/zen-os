@@ -1572,6 +1572,70 @@ describe("file browser navbar navigation", function()
         assert.are.equal("Folder", _G.__ZEN_UI_ACTIVE_TAB_LABEL)
     end)
 
+    it("delivers a custom action to the file manager behind Home", function()
+        local fm = make_instance()
+        fm[1] = { fm.file_chooser }
+        local delivered, other = 0, 0
+        fm.handleEvent = function(_, event)
+            if event.name == "PluginOpen" then delivered = delivered + 1; return true end
+        end
+        local home
+        home_show_callback = function(inject)
+            home = {
+                name = "home", dimen = { w = 800, h = 600 }, inner_dimen = { w = 800, h = 600 },
+                updateItems = function() end,
+                handleEvent = function(_, event)
+                    if event.name == "Other" then other = other + 1 end
+                    return false
+                end,
+                { dimen = { w = 800, h = 560 } },
+            }
+            inject(home, "home")
+        end
+        UIManager.sendEvent = function(self, event)
+            self._window_stack[#self._window_stack].widget:handleEvent(event)
+        end
+        local original_send = UIManager.sendEvent
+        require("dispatcher").execute = function()
+            UIManager:sendEvent({ name = "PluginOpen" })
+            UIManager:sendEvent({ name = "Other" })
+        end
+        local navbar = _G.__ZEN_UI_PLUGIN.config.navbar
+        navbar.custom_tabs = {{ id = "ct_plugin", type = "action", action = { plugin_open = true } }}
+        navbar.show_tabs.ct_plugin = true
+        navbar.tab_order = { "home", "ct_plugin" }
+        _G.__ZEN_UI_REINJECT_FM_NAVBAR()
+        assert.is_true(_G.__ZEN_UI_NAVBAR_OPEN_TAB("home"))
+        UIManager._window_stack = { { widget = fm }, { widget = home } }
+        local bar = home[1][1][2]
+        bar.getTappedTabId = function() return "ct_plugin" end
+
+        assert.is_true(bar:onTapNavBar(nil, { pos = { x = 600, y = 1 } }))
+        assert.are.equal(1, delivered)
+        assert.are.equal(1, other)
+        assert.are.equal(original_send, UIManager.sendEvent)
+
+        navbar.default_tab = "ct_plugin"
+        assert.is_true(bar:onTapNavBar(nil, { pos = { x = 600, y = 1 } }))
+        assert.are.equal(2, delivered)
+        assert.are.equal(2, other)
+
+        home.name = "other"
+        assert.is_true(bar:onTapNavBar(nil, { pos = { x = 600, y = 1 } }))
+        assert.are.equal(2, delivered)
+        assert.are.equal(3, other)
+        home.name = "home"
+
+        require("dispatcher").execute = function() error("action failed") end
+        assert.is_false(pcall(bar.onTapNavBar, bar, nil, { pos = { x = 600, y = 1 } }))
+        assert.are.equal(original_send, UIManager.sendEvent)
+
+        fm.handleEvent = function() error("handler failed") end
+        require("dispatcher").execute = function() UIManager:sendEvent({ name = "PluginOpen" }) end
+        assert.is_false(pcall(bar.onTapNavBar, bar, nil, { pos = { x = 600, y = 1 } }))
+        assert.are.equal(original_send, UIManager.sendEvent)
+    end)
+
     it("routes a navbar Open folder action through Folder tab navigation", function()
         local fm = make_instance()
         local fc = fm.file_chooser
